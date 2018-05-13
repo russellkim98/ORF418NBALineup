@@ -39,8 +39,8 @@ def kgcb(mu_0, beta_w, cov_m, iteration):
         kg = EmaxAffine(a,b)
         py.append(kg)
     
-    x = np.argmax([(82-iteration)*py[i]+mu_est[i] for i in range(100)])-1
-    return(x)
+    x = np.argmax([(82-iteration)*py[i]+mu_est[i] for i in range(kk)])
+    return x
 
 
 

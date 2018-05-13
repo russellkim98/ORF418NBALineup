@@ -26,6 +26,6 @@ def Boltzmann(belief,theta,iteration):
         else:
             P_x[i] = P_x[i-1]+p_x[i]
         #Check if cumulative distribution goes over U 
-        if P_x[i] >= U:
+        if P_x[i] <= U:
             argMax = i
     return(argMax)
