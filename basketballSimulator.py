@@ -205,7 +205,6 @@ def cumulative(lst):
         if i == 1:
             rewards[i] = lst[i]
         else:
-            print(rewards[i-1])
             rewards[i] = lst[i] + rewards[i-1]
     return(rewards)
             
