@@ -27,58 +27,20 @@ import matplotlib.pyplot as plt
 
 
 
-def kgcb(mu, mu_0, beta_w, cov_m, m):
+def kgcb(mu_0, beta_w, cov_m, iteration):
     kk = len(mu_0) # number of available choices
     mu_est = mu_0.copy()
-    oc = []
-    choices = []
-    mu_est_all = []
-    # try the kgcb for M number of times
-    for k in range(m):
-        # py is the KG for alternatives
-        ##THIS IS THE CODE TO COPY FOR THE POLICY##
-        py = []
-        # loop over all choices
-        for iter1 in range(kk):
-            a = mu_est.copy()
-            b = np.divide(cov_m[iter1], np.sqrt(1/beta_w[iter1]+cov_m[iter1][iter1]))
-            kg = EmaxAffine(a,b)
-            py.append(kg)
+    ##THIS IS THE CODE TO COPY FOR THE POLICY##
+    py = []
+    # loop over all choices
+    for iter1 in range(kk):
+        a = mu_est.copy()
+        b = np.divide(cov_m[iter1], np.sqrt(1/beta_w[iter1]+cov_m[iter1][iter1]))
+        kg = EmaxAffine(a,b)
+        py.append(kg)
     
-        # THIS SHOULD BE x = np.argmax([(82-n)*py[i]+mu_est[i] for i in range(100)]
-        
-        
-        ## THIS STUFF IS FOR UPDATING EQUATIONS
-
-        # max_value is the best estimated value of the KG
-        # x is the argument that produces max_value
-
-        # observe the outcome of the decision
-        # w_k=mu_k+Z*SigmaW_k where SigmaW is standard deviation of the
-        # error for each observation
-        w_k = mu[x]+np.random.randn()/np.sqrt(beta_w[x])
-
-        # updating equations for Normal-Normal model with covariance
-        addscalar = (w_k - mu_est[x])/(1/beta_w[x] + cov_m[x][x])
-        # cov_m_x is the x-th column of the covariance matrix cov_m
-        cov_m_x = np.array([row[x] for row in cov_m])
-        mu_est = np.add(mu_est, np.multiply(addscalar, cov_m_x))
-        cov_m = np.subtract(cov_m, np.divide(np.outer(cov_m_x, cov_m_x), 1/beta_w[x] + cov_m[x][x]))
-
-        # pick the best one to compare OC
-        max_choice = np.argmax(mu_est)
-
-        # calculate the opportunity cost
-        o_cost = np.max(mu)-mu[max_choice]
-
-        # update the OC vector
-        oc.append(o_cost)
-        # update the choice vector
-        choices.append(x)
-        # update the matrix of estimate
-        mu_est_all.append(mu_est)
-        del py[:]
-    return mu_est, oc, choices, mu_est_all
+    x = np.argmax([(82-iteration)*py[i]+mu_est[i] for i in range(100)])-1
+    return(x)
 
 
 
@@ -94,57 +56,6 @@ def Get_kg(mu_0, beta_w, cov_m):
         py.append(kg)
     return(py)
 
-
-
-# Online Learning ALgorithm
-def Online_kgcb(mu, mu_0, beta_w, cov_m, m):
-    kk = len(mu_0) # number of available choices
-    mu_est = mu_0.copy()
-    oc = []
-    choices = []
-    mu_est_all = []
-    # try the kgcb for M number of times
-    for k in range(m):
-        # py is the KG for alternatives
-        py = []
-        for iter1 in range(kk):
-            a = mu_est.copy()
-            b = np.divide(cov_m[iter1], np.sqrt(1/beta_w[iter1]+cov_m[iter1][iter1]))
-            #kg = EmaxAffine(a,b)
-            online_kg = a[iter1] + (m-k-1)*EmaxAffine(a,b)
-            py.append(online_kg)
-    
-        x = np.argmax(py)
-
-        # max_value is the best estimated value of the KG
-        # x is the argument that produces max_value
-
-        # observe the outcome of the decision
-        # w_k=mu_k+Z*SigmaW_k where SigmaW is standard deviation of the
-        # error for each observation
-        w_k = mu[x]+np.random.randn()/np.sqrt(beta_w[x])
-
-        # updating equations for Normal-Normal model with covariance
-        addscalar = (w_k - mu_est[x])/(1/beta_w[x] + cov_m[x][x])
-        # cov_m_x is the x-th column of the covariance matrix cov_m
-        cov_m_x = np.array([row[x] for row in cov_m])
-        mu_est = np.add(mu_est, np.multiply(addscalar, cov_m_x))
-        cov_m = np.subtract(cov_m, np.divide(np.outer(cov_m_x, cov_m_x), 1/beta_w[x] + cov_m[x][x]))
-
-        # pick the best one to compare OC
-        max_choice = np.argmax(mu_est)
-
-        # calculate the opportunity cost
-        o_cost = np.max(mu)-mu[max_choice]
-
-        # update the OC vector
-        oc.append(o_cost)
-        # update the choice vector
-        choices.append(x)
-        # update the matrix of estimate
-        mu_est_all.append(mu_est)
-        del py[:]
-    return mu_est, oc, choices, mu_est_all
     
 
 # Calculate the KG value defined by
@@ -291,138 +202,3 @@ def LogSumExp(x):
     y = xmax + np.log(np.sum(np.exp(diff_max.astype(float))))
     return y
 
-
-# KGCB Run
-
-# THIS PART GENERATES THE TRUTH FOR A GAUSSIAN PROCESS
-# SPITS OUT
-# x (THE ALTERNATIVES)
-# mu_0 (PRIOR BELIEF ABOUT MEAN)
-# mu (THE MEAN (TRUTH))
-# covM (THE COVARIANCE MATRIX)
-
-# In[Main Function Part a]:
-    
-# Let's generate a so called Gaussian Process with zero mean on [1,100]
-if __name__=='__main__':
-    x = list(range(100)) # domain of the problem
-    # Prior belief of revenue is 1400 uniformly
-    mu_0 = [1400]*100 # our prior beliefs about the mean
-
-    # this is the main parameter (rho is between 0 and 1)
-    # you can play around with the values to see what happens as rho changes
-    #rho = 0.10
-    # We don't really need rho for this new model
-    
-    # variance of individual components in mu
-    var_mu = 400**2
-
-    # generate the covariance matrix
-    M = len(x)
-    covM = [[var_mu for i in range(M)] for j in range(M)]
-
-    # the matrix will be symmetric
-    # instead of looping over all elements, just loop over the first half
-    for i in range(M):
-        for j in range(i,M):
-            if i != j:
-                # We update the covariance initial to match the question
-                covM[i][j] = var_mu*np.exp(-(np.absolute(i-j)*0.03))
-                covM[j][i] = covM[i][j]
-
-    # generate the truth using the formula given in the question
-    price_list = list(range(1,101))
-    mu = [p*100*np.exp(-0.02*p) for p in price_list]
-
-    # To see what the functions looks like in the domain [1,100]
-    plt.figure(1)
-    plt.plot(price_list, mu)
-    plt.title('True Revenue')
-    plt.xlabel('Choices of Price')
-    plt.ylabel('Value')
-    # In[Part b]:
-
-    # THIS PART RUNS THE KGCB ON THE VALUES GENERATED BY ABOVE
-
-    # Set the measurement variance
-    var_w = 400**2
-    beta_W = np.multiply(1/var_w, [1]*M)
-    # Precision(Beta)=1/Variance
-    
-    # Compute Knowledge Gradient
-    KG_0 = Get_kg(mu_0, beta_W, covM)
-    plt.figure(2)
-    plt.plot(price_list, KG_0)
-    plt.title('Knowledge Gradient of Prior')
-    plt.xlabel('Choices')
-    plt.ylabel('Knowledge Gradient Value')
-    # In[ Part c]:
-    # Repeat this 50 times measurement for 20 simulations
-    S = 20
-    # Also record the price that are tested
-    # Run the KGCB on N budget
-    N = 50
-    
-    for i in range(20):
-        # The simple function to run KGCB
-        mu_est, oc, choices, mu_est_all = kgcb(mu, mu_0, beta_W, covM, N)
-        #mu_est_rec.append(mu_est)
-        #choices_rec.append(choices)
-        plt.figure(3)
-        plt.plot(list(range(0,50)), oc)
-        plt.title('Opportunity Cost for Each Path')
-        plt.xlabel('Time')
-        plt.ylabel('Opportunity Cost Value')
-        plt.figure(4)
-        plt.plot(list(range(0,50)), choices)
-        plt.title('Price Tested Each Time')
-        plt.xlabel('Time')
-        plt.ylabel('Choices of Price')
-    # In[Part d]:
-    for i in range(20):
-        # The simple function to run KGCB
-        mu_est, oc, choices, mu_est_all = Online_kgcb(mu, mu_0, beta_W, covM, N)
-        #mu_est_rec.append(mu_est)
-        #choices_rec.append(choices)
-        plt.figure(5)
-        plt.plot(list(range(0,50)), oc)
-        plt.title('Online KG Opportunity Cost for Each Path')
-        plt.xlabel('Time')
-        plt.ylabel('Opportunity Cost Value')
-        plt.figure(6)
-        plt.plot(list(range(0,50)), choices)
-        plt.title('Online KG Price Tested Each Time')
-        plt.xlabel('Time')
-        plt.ylabel('Choices of Price')
-        
-        
-        
-    # The following codes are not required for answering Question 1
-    # all the plots are saved as .pdf files under the same folder containing the source code
-    # Plot the final estimates vs. truth
-    fig, ax = plt.subplots()
-    ax.plot(x, mu, 'r-', linewidth=2, label='Truth') # 'r-' makes it a red line, LineWidth is the thickness
-    ax.plot(x, mu_est, 'b--', lineWidth=2, label='Estimate') # 'b--' makes it a blue dashed line
-    legend = ax.legend(loc='best')
-    plt.xlabel('Choices')
-    plt.ylabel('Expected reward')
-    plt.savefig('Final estimates and truth.pdf', format='pdf')
-    plt.clf()
-
-    # Plot the estimate at the Kth time step vs. truth
-    K = 10
-    fig, ax = plt.subplots()
-    ax.plot(x, mu, 'r-', linewidth=2, label='Truth')
-    ax.plot(x, mu_est_all[K-1], 'b--', lineWidth=2, label='Estimate')
-    legend = ax.legend(loc='best')
-    plt.xlabel('Choices')
-    plt.ylabel('Expected reward')
-    plt.savefig('The {:d}-th estimates and truth.pdf'.format(K), format='pdf')
-    plt.clf()
-
-    # Plot Opportunity Cost vs Time
-    plt.plot(list(range(N)), oc, 'g-', lineWidth=1.5)
-    plt.xlabel('Iteration')
-    plt.ylabel('Opportunity cost')
-    plt.savefig('Opportunity cost.pdf', format='pdf')
-    plt.clf()

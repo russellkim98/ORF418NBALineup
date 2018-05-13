@@ -1,6 +1,12 @@
 import numpy as np
-import pandas as pd
+import os
+os.chdir('/Users/therealrussellkim/ORF418/ORF418NBALineup')
 import itertools
+import epsilonGreedy as eg
+import Boltzmann as b
+import UCB as UCB
+import KGCB as KGCB
+import matplotlib.pyplot as plt
 
 class Simulator():
 
@@ -23,6 +29,9 @@ class Simulator():
         self.belief2 = np.asarray([[0]*15 for i in range(15)])
         self.belief3 = np.asarray([[[0]*15 for i in range(15)] for j in range(15)])
         
+        self.debugMean = 0
+      
+    # Matrix Multiplication method, not used anymore
     def OldpopulateTruth(self, seed):
         np.random.seed(seed)
         firstLineup = [1,1,1,1,1,1,1,1,1,1,0,0,0,0,0]
@@ -80,6 +89,7 @@ class Simulator():
         return(truth)
     
     def populateTruth(self,seed):
+        np.random.seed(seed)
          # Populate theta values
         for i in range(15):
             self.truth1[i] = np.random.randint(-20,21)
@@ -103,6 +113,7 @@ class Simulator():
     
 
     def monteCarlo(self,seed):
+        np.random.seed(seed)
         truths = list()
         for i in range(5):
             truths.append(self.populateTruth(i))
@@ -123,42 +134,91 @@ class Simulator():
                 lineup_j = self.lineups[self.lineup_index_100[j]]
                 self.covariance[i][j] = len(intersection(lineup_i,lineup_j))*var_player
      
-    def simulate(self, seed):
-        np.random.seed(seed)
-        tempTruth = [np.random.normal(self.truth_100[i], scale = 8) for i in self.truth_100]
-        rewards= [0,0,0,0]
-        #EG policy initializea
+                
+              
+    def simulate(self):
+        tempTruth = [np.random.normal(self.truth_100[i], scale = 8) for i in range(100)]
+        rewards = [[0 for j in range(82)] for k in range(4)]
+        # Create prior mean
+        priorMeans = [[np.random.uniform(3,18) for i in range(100)] for j in range(4)]
+        # Create prior covariance matrix 
+        self.fillCov()
+        priorCov = [self.covariance.copy() for i in range(4)]
         
+        #EG policy initializes
+        epsilon = 0.5
         #Boltzmann policy initialize
-
-        #Pure exploitation initialize
-
+        theta_b = np.random.uniform(0,10)
+        #UCB initializes
+        theta_u = np.random.uniform(1,5)
         #KG policy initialize
+        precision = [1/22.5 for i in range(100)]
+        num_selected = [1 for i in range(100)]
 
         
         def drawObservations(self, lineupChoice):
             return(tempTruth[lineupChoice]+ np.random.normal(0,scale = 10))
         
-        for i in range(82):
+        for i in range(0,82):
+            choices = [0 for j in range(4)]
             #get choices for all the policies and put in a list
-            choices = []
-            results = [drawObservations(choice) for choice in choices]
-            # make policies learn 
-            rewards = [rewards[i]+results[i] for i in rewards]
+            choices[0] = eg.EpsilonGreedy(priorMeans[0],epsilon,0)
+            choices[1] = b.Boltzmann(priorMeans[1],theta_b,i)
+            choices[2],numselected = UCB.UCB(priorMeans[2],theta_u,i,num_selected)
+            choices[3] = KGCB.kgcb(priorMeans[3],precision,priorCov[3],i)
             
+            results = [drawObservations(self,j) for j in choices]
+            
+            for j in range(4):
+                
+                rewards[j][i] = results[j]
+            
+            
+             ## THIS STUFF IS FOR UPDATING EQUATIONS
+
+            # max_value is the best estimated value of the KG
+            # x is the argument that produces max_value
+
+            # observe the outcome of the decision
+            # w_k=mu_k+Z*SigmaW_k where SigmaW is standard deviation of the
+            # error for each observation
+            for j in range(4):
+                w_k = results[j]
+                cov_m = np.asarray(priorCov[j])
+                x = choices[j]
+                # updating equations for Normal-Normal model with covariance
+                addscalar = (w_k - priorMeans[j][x])/(1/precision[x] + cov_m[x][x])
+                # cov_m_x is the x-th column of the covariance matrix cov_m
+                cov_m_x = np.array([row[x] for row in cov_m])
+                priorMeans[j]= np.add(priorMeans[j], np.multiply(addscalar, cov_m_x))
+                cov_m = np.subtract(cov_m, np.divide(np.outer(cov_m_x, cov_m_x), 1/precision[x] + cov_m[x][x]))
+                priorCov[j] = cov_m
+
         return(rewards)
                 
-            
+         
     
 
-        
+def cumulative(lst):
+    rewards = [0 for i in range(82)]
+    for i in range(82):
+        if i == 1:
+            rewards[i] = lst[i]
+        else:
+            print(rewards[i-1])
+            rewards[i] = lst[i] + rewards[i-1]
+    return(rewards)
+            
         
 
 test = Simulator()
 test.monteCarlo(5)
 test.fillCov()
-
-
+results = test.simulate()
+x = np.arange(1, 83, 1)
+cumulative = [cumulative(results[j]) for j in range(4)]
+for i in range(4):
+    plt.plot(x,cumulative[i])
 
 
 
