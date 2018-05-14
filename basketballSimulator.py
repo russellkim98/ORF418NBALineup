@@ -223,13 +223,15 @@ if __name__ == '__main__':
     cumul = [cumulative(results[j]) for j in range(4)]
     colors = ['-b','-r','g+','p-']
     labels = ['EGreedy choice', 'Boltzmann choice', 'UCB', 'KG']
-    for i in range(4):
-        plt.plot(x,cumul[i],colors[i],label = labels[i] )
+    plt.title("All policies")
     plt.xlabel('Cumulative performance of policies(points)')
     plt.ylabel('Number of games simulated')
-    plt.figure(0)
+    for i in range(4):
+        plt.plot(x,cumul[i],colors[i],label = labels[i] )
     plt.legend(loc = 'upper left')
-    plt.title("All policies")
+    plt.figure(0)
+    
+    
     
     
     # Test different values of the epsilon value 
@@ -237,11 +239,14 @@ if __name__ == '__main__':
     test1.monteCarlo()
     test1.fillCov()
     eps = np.arange(0,1,0.1)
-    epsResults = [test1.simulate(eps[i],3,5) for i in range(len(eps))]
-    yEps = [sum(epsResults[i][0]) for i in range(len(epsResults))]
+    epsResults = np.asarray([[test1.simulate(eps[i],3,5) for i in range(len(eps))]for j in range(5)])
+    yEps = np.average([[sum(epsResults[j][i][0]) for j in range(5)] for i in range(10)], axis = 1)
+        
     for i in range(len(yEps)):
         plt.scatter(eps[i],yEps[i],label = eps[i] )
-    plt.legend(loc = 'best')
+    plt.ylabel('Cumulative performance of policies(points)')
+    plt.xlabel('Epsilon Value')
+    plt.legend(loc = 'best',ncol=2)
     plt.figure(1)
     plt.title("Varying values of epsilon in the EG policy")
     
@@ -250,30 +255,47 @@ if __name__ == '__main__':
     test2.monteCarlo()
     test2.fillCov()
     boltzmannC = np.arange(0,10,0.5)
-    boltzResults = [test1.simulate(0.3,boltzmannC[i],5) for i in range(len(boltzmannC))]
-    yBoltz = [sum(boltzResults[i][0]) for i in range(len(boltzResults))]
-    plt.figure(2)
+    boltzResults = np.asarray([[test1.simulate(0.3,boltzmannC[i],5) for i in range(len(boltzmannC))]for j in range(5)])
+    yBoltz = np.average([[sum(boltzResults[j][i][1]) for j in range(5)] for i in range(len(boltzmannC))],axis = 1)
     plt.title("Varying values of theta in the Boltzmann policy") 
+    plt.ylabel('Cumulative performance of policies(points)')
+    plt.xlabel('Theta_B Value')
     for i in range(len(boltzmannC)):
         plt.scatter(boltzmannC[i],yBoltz[i],label = boltzmannC[i] )
-    plt.legend(loc = 'best')
+    plt.legend(ncol=3,loc='center left', bbox_to_anchor=(1, 0.5))   
+    plt.figure(2)
     
     # Test different values of the UCB theta constant 
     test3 = Simulator()
     test3.monteCarlo()
     test3.fillCov()
     UCB_theta = np.arange(0,10,0.5)
-    UCB_results = [test1.simulate(0.3,boltzmannC[i],5) for i in range(len(boltzmannC))]
-    yBoltz = [sum(boltzResults[i][0]) for i in range(len(boltzResults))]
-    plt.figure(2)
-    plt.title("Varying values of theta in the Boltzmann policy") 
-    for i in range(len(boltzmannC)):
-        plt.scatter(boltzmannC[i],yBoltz[i],label = boltzmannC[i] )
-    plt.legend(loc = 'best')    
+    UCB_results = np.asarray([[test1.simulate(0.3,0.5,UCB_theta[i]) for i in range(len(UCB_theta))]for j in range(5)])
+    yUCB = np.average([[sum(UCB_results[j][i][2]) for j in range(len(UCB_results))]for i in range(len(UCB_theta))],axis = 1)
+    plt.figure(3)
+    plt.title("Varying values of theta in the UCB policy") 
+    plt.ylabel('Cumulative performance of policies(points)')
+    plt.xlabel('Theta_UCB Value')
+    for i in range(len(UCB_theta)):
+        plt.scatter(UCB_theta[i],yUCB[i],label = UCB_theta[i] )
+    plt.legend(ncol=3,loc='center left', bbox_to_anchor=(1, 0.5))    
        
     
-    
-    
+    # Test all Policies with maximized theta values
+    test4 = Simulator()
+    test4.monteCarlo()
+    test4.fillCov()
+    results4 = test4.simulate(0.4,0.5,0.5)
+    x = np.arange(1, 83, 1)
+    cumul4 = [cumulative(results4[j]) for j in range(4)]
+    plt.figure(4)
+    plt.title("All policies")
+    plt.ylabel('Cumulative performance of policies(points)')
+    plt.xlabel('Number of games simulated')
+    for i in range(4):
+        plt.plot(x,cumul4[i],colors[i],label = labels[i] )
+    plt.legend(loc = 'upper left')
+ 
     
     
     
