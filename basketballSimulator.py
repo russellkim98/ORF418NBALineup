@@ -88,8 +88,7 @@ class Simulator():
         self.truth = truth
         return(truth)
     
-    def populateTruth(self,seed):
-        np.random.seed(seed)
+    def populateTruth(self):
          # Populate theta values
         for i in range(15):
             self.truth1[i] = np.random.randint(-20,21)
@@ -115,7 +114,7 @@ class Simulator():
     def monteCarlo(self):
         truths = list()
         for i in range(5):
-            truths.append(self.populateTruth(i))
+            truths.append(self.populateTruth())
         truthAverage = [sum(x)/5 for x in zip(truths[0],truths[1],truths[2],truths[3],truths[4])]
         
         indices = np.random.choice(3003,100)
@@ -135,7 +134,7 @@ class Simulator():
      
                 
               
-    def simulate(self, ep, boltz,ucb):
+    def simulate(self, c, boltz,ucb):
         #tempTruth = [np.random.normal(self.truth_100[i], scale = 8) for i in range(100)]
         rewards = [[0 for j in range(82)] for k in range(4)]
         # Create prior mean
@@ -149,7 +148,7 @@ class Simulator():
         tempTruth = np.random.multivariate_normal(pMean, self.covariance)
         
         #EG policy initializes
-        epsilon = ep
+        constant = c
         #Boltzmann policy initialize
         theta_b = boltz
         #UCB initializes
@@ -165,7 +164,7 @@ class Simulator():
         for i in range(0,82):
             choices = [0 for j in range(4)]
             #get choices for all the policies and put in a list
-            choices[0] = eg.EpsilonGreedy(priorMeans[0],epsilon)
+            choices[0] = eg.EpsilonGreedy(priorMeans[0],constant,i)
             choices[1] = b.Boltzmann(priorMeans[1],theta_b,i)
             choices[2],numselected = UCB.UCB(priorMeans[2],theta_u,i,num_selected)
             choices[3] = KGCB.kgcb(priorMeans[3],precision,priorCov[3],i)
@@ -186,7 +185,7 @@ class Simulator():
             # observe the outcome of the decision
             # w_k=mu_k+Z*SigmaW_k where SigmaW is standard deviation of the
             # error for each observation
-            for j in range(4):
+            for j in range(1):
                 w_k = results[j]
                 cov_m = np.asarray(priorCov[j])
                 x = choices[j]
@@ -197,7 +196,6 @@ class Simulator():
                 priorMeans[j]= np.add(priorMeans[j], np.multiply(addscalar, cov_m_x))
                 cov_m = np.subtract(cov_m, np.divide(np.outer(cov_m_x, cov_m_x), 1/precision[x] + cov_m[x][x]))
                 priorCov[j] = cov_m
-
         return(rewards)
                 
          
@@ -239,16 +237,16 @@ if __name__ == '__main__':
     test1.monteCarlo()
     test1.fillCov()
     eps = np.arange(0,1,0.1)
-    epsResults = np.asarray([[test1.simulate(eps[i],3,5) for i in range(len(eps))]for j in range(5)])
+    epsResults = np.asarray([[test1.simulate(eps[i],3,5) for i in range(len(eps))]for j in range(100)])
     yEps = np.average([[sum(epsResults[j][i][0]) for j in range(5)] for i in range(10)], axis = 1)
         
     for i in range(len(yEps)):
         plt.scatter(eps[i],yEps[i],label = eps[i] )
     plt.ylabel('Cumulative performance of policies(points)')
-    plt.xlabel('Epsilon Value')
-    plt.legend(loc = 'best',ncol=2)
+    plt.xlabel('C Value')
+    plt.legend(ncol = 2,loc='center left', bbox_to_anchor=(1, 0.5))
     plt.figure(1)
-    plt.title("Varying values of epsilon in the EG policy")
+    plt.title("Varying values of c in the EG policy")
     
     # Test different values of the Boltzmann Theta constant
     test2 = Simulator()
@@ -285,9 +283,9 @@ if __name__ == '__main__':
     test4 = Simulator()
     test4.monteCarlo()
     test4.fillCov()
-    results4 = test4.simulate(0.4,0.5,0.5)
     x = np.arange(1, 83, 1)
-    cumul4 = [cumulative(results4[j]) for j in range(4)]
+    results4 = [test4.simulate(0.4,0.5,0.5) for i in range(20)]
+    cumul4 = np.average([[cumulative(results4[i][j]) for j in range(4)]for i in range(len(results4))],axis = 1)
     plt.figure(4)
     plt.title("All policies")
     plt.ylabel('Cumulative performance of policies(points)')

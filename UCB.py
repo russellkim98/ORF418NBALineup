@@ -11,7 +11,7 @@ def UCB(belief,theta,iteration,num_selected):
     bonus = [0 for i in range(len(belief))]
     
     for i in range(len(belief)):
-        bonus[i] = theta*np.sqrt(np.log(iteration)/num_selected[i])
+        bonus[i] = theta*np.sqrt(np.log(iteration+1)/num_selected[i])
     bonus_theta = [bonus[i]*theta for i in range(len(bonus))]
     argMax = np.argmax(np.add(belief, bonus_theta))
     num_selected[argMax] += 1

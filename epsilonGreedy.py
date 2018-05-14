@@ -8,8 +8,9 @@ Created on Thu May 10 11:26:56 2018
 
 import numpy as np
 
-def EpsilonGreedy(belief,epsilon):
+def EpsilonGreedy(belief,c,iteration):
     tempValue = np.random.uniform(0,1)
+    epsilon = c/(iteration+1)
     choice = 0
     # explore with prob = epsilon
     if tempValue < epsilon:
