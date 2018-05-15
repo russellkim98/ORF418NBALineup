@@ -185,7 +185,7 @@ class Simulator():
             # observe the outcome of the decision
             # w_k=mu_k+Z*SigmaW_k where SigmaW is standard deviation of the
             # error for each observation
-            for j in range(1):
+            for j in range(4):
                 w_k = results[j]
                 cov_m = np.asarray(priorCov[j])
                 x = choices[j]
@@ -284,7 +284,7 @@ if __name__ == '__main__':
     test4.monteCarlo()
     test4.fillCov()
     x = np.arange(1, 83, 1)
-    results4 = [test4.simulate(0.4,0.5,0.5) for i in range(20)]
+    results4 = [test4.simulate(0.8,0.5,0.5) for i in range(20)]
     cumul4 = np.average([[cumulative(results4[i][j]) for j in range(4)]for i in range(len(results4))],axis = 1)
     plt.figure(4)
     plt.title("All policies")
